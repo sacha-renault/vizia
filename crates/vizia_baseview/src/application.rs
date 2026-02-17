@@ -206,8 +206,8 @@ impl ApplicationRunner {
     /// Handle all reactivity within a frame. The window instance is used to resize the window when
     /// needed.
     pub fn on_frame_update(&mut self, window: &mut Window) {
-        while let Some(event) = queue_get() {
-            self.cx.send_event(event);
+        while let Some(_event) = queue_get() {
+            // self.cx.send_event(event);
         }
 
         // Events
