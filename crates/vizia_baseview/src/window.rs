@@ -12,7 +12,7 @@ use skia_safe::gpu::{
 };
 use skia_safe::{ColorSpace, ColorType, PixelGeometry, Surface, SurfaceProps, SurfacePropsFlags};
 
-use crate::proxy::BaseviewProxy;
+// use crate::proxy::BaseviewProxy;
 use vizia_core::backend::*;
 use vizia_core::prelude::*;
 
@@ -154,9 +154,7 @@ impl ViziaWindow {
                 cx.ignore_default_theme = ignore_default_theme;
                 cx.remove_user_themes();
 
-                let mut cx = BackendContext::new(cx);
-
-                cx.set_event_proxy(Box::new(BaseviewProxy));
+                let cx = BackendContext::new(cx);
                 ViziaWindow::new(cx, win_desc, scale_policy, window, Some(Box::new(app)), on_idle)
             },
         )
@@ -193,9 +191,7 @@ impl ViziaWindow {
                 cx.ignore_default_theme = ignore_default_theme;
                 cx.remove_user_themes();
 
-                let mut cx = BackendContext::new(cx);
-
-                cx.set_event_proxy(Box::new(BaseviewProxy));
+                let cx = BackendContext::new(cx);
                 ViziaWindow::new(cx, win_desc, scale_policy, window, Some(Box::new(app)), on_idle)
             },
         )

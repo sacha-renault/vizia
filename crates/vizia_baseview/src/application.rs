@@ -7,7 +7,7 @@ use raw_window_handle::HasRawWindowHandle;
 use skia_safe::gpu::gl::FramebufferInfo;
 use vizia_core::events::EventManager;
 
-use crate::proxy::queue_get;
+// use crate::proxy::queue_get;
 use vizia_core::backend::*;
 use vizia_core::prelude::*;
 
@@ -206,9 +206,9 @@ impl ApplicationRunner {
     /// Handle all reactivity within a frame. The window instance is used to resize the window when
     /// needed.
     pub fn on_frame_update(&mut self, window: &mut Window) {
-        while let Some(_event) = queue_get() {
-            // self.cx.send_event(event);
-        }
+        // while let Some(event) = queue_get() {
+        //     self.cx.send_event(event);
+        // }
 
         // Events
         self.event_manager.flush_events(self.cx.context(), |window_event| match window_event {
