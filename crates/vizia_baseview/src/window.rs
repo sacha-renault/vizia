@@ -1,7 +1,11 @@
+use std::cell::Cell;
+use std::rc::Rc;
+
 use crate::application::ApplicationRunner;
 use baseview::gl::GlConfig;
 use baseview::{
-    Event, EventStatus, Window, WindowHandle, WindowHandler, WindowOpenOptions, WindowScalePolicy,
+    Event, EventStatus, MouseCursor, Window, WindowHandle, WindowHandler, WindowOpenOptions,
+    WindowScalePolicy,
 };
 use gl::types::GLint;
 use gl_rs as gl;
@@ -21,6 +25,7 @@ pub(crate) struct ViziaWindow {
     application: ApplicationRunner,
     #[allow(clippy::type_complexity)]
     on_idle: Option<Box<dyn Fn(&mut Context) + Send>>,
+    cursor: Rc<Cell<Option<MouseCursor>>>,
 }
 
 impl ViziaWindow {
@@ -89,8 +94,9 @@ impl ViziaWindow {
         };
         let dpi_factor = window_scale_factor * win_desc.user_scale_factor;
 
+        let cursor = Rc::new(Cell::new(None));
         cx.add_main_window(Entity::root(), &win_desc, dpi_factor as f32);
-        cx.add_window(WindowView {});
+        cx.add_window(WindowView { cursor: cursor.clone() });
 
         cx.0.windows.insert(
             Entity::root(),
@@ -113,7 +119,7 @@ impl ViziaWindow {
         );
         unsafe { context.make_not_current() };
 
-        ViziaWindow { application, on_idle }
+        ViziaWindow { application, on_idle, cursor }
     }
 
     /// Open a new child window.
@@ -203,6 +209,10 @@ impl WindowHandler for ViziaWindow {
         self.application.on_frame_update(window);
 
         self.application.render(window);
+
+        if let Some(new_cursor) = self.cursor.take() {
+            window.set_mouse_cursor(new_cursor);
+        }
     }
 
     fn on_event(&mut self, window: &mut Window<'_>, event: Event) -> EventStatus {
@@ -220,9 +230,58 @@ impl WindowHandler for ViziaWindow {
     }
 }
 
-pub struct WindowView {}
+pub struct WindowView {
+    cursor: Rc<Cell<Option<MouseCursor>>>,
+}
 
-impl View for WindowView {}
+impl View for WindowView {
+    fn event(&mut self, cx: &mut EventContext, event: &mut vizia_core::events::Event) {
+        event.map(|event, meta| match event {
+            WindowEvent::SetCursor(icon) if !cx.is_cursor_icon_locked() => {
+                let baseview_icon = match icon {
+                    CursorIcon::Default | CursorIcon::Arrow => MouseCursor::Default,
+                    CursorIcon::Hand => MouseCursor::Hand,
+                    CursorIcon::Grabbing => MouseCursor::HandGrabbing,
+                    CursorIcon::Help => MouseCursor::Help,
+                    CursorIcon::None => MouseCursor::Hidden,
+                    CursorIcon::Text => MouseCursor::Text,
+                    CursorIcon::VerticalText => MouseCursor::VerticalText,
+                    CursorIcon::Progress => MouseCursor::PtrWorking,
+                    CursorIcon::Wait => MouseCursor::Working,
+                    CursorIcon::NotAllowed | CursorIcon::NoDrop => MouseCursor::NotAllowed,
+                    CursorIcon::ZoomIn => MouseCursor::ZoomIn,
+                    CursorIcon::ZoomOut => MouseCursor::ZoomOut,
+                    CursorIcon::Alias => MouseCursor::Alias,
+                    CursorIcon::Copy => MouseCursor::Copy,
+                    CursorIcon::Move => MouseCursor::Move,
+                    CursorIcon::AllScroll => MouseCursor::AllScroll,
+                    CursorIcon::Cell => MouseCursor::Cell,
+                    CursorIcon::Crosshair => MouseCursor::Crosshair,
+                    CursorIcon::Grab => MouseCursor::Hand,
+                    CursorIcon::EResize => MouseCursor::EResize,
+                    CursorIcon::NResize => MouseCursor::NResize,
+                    CursorIcon::NeResize => MouseCursor::NeResize,
+                    CursorIcon::NwResize => MouseCursor::NwResize,
+                    CursorIcon::SResize => MouseCursor::SResize,
+                    CursorIcon::SeResize => MouseCursor::SeResize,
+                    CursorIcon::SwResize => MouseCursor::SwResize,
+                    CursorIcon::WResize => MouseCursor::WResize,
+                    CursorIcon::EwResize => MouseCursor::EwResize,
+                    CursorIcon::NsResize => MouseCursor::NsResize,
+                    CursorIcon::NeswResize => MouseCursor::NeswResize,
+                    CursorIcon::NwseResize => MouseCursor::NwseResize,
+                    CursorIcon::ColResize => MouseCursor::ColResize,
+                    CursorIcon::RowResize => MouseCursor::RowResize,
+                    CursorIcon::ContextMenu => MouseCursor::Default,
+                };
+
+                self.cursor.set(Some(baseview_icon));
+                meta.consume();
+            }
+            _ => {}
+        });
+    }
+}
 
 pub fn create_surface(
     size: (i32, i32),
